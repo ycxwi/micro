@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package greeter;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/ycxwi/micro/v3/cmd/protoc-gen-micro/greeter;greeter";
+
+service Greeter {
+  rpc Hello(Request) returns (Response) {
+    option (google.api.http) = {
+      post: "/hello";
+  body:
+    "*";
+  };
+}
+rpc Stream(stream Request) returns (stream Response) {
+  option (google.api.http) = {
+    get: "/stream";
+};
+}
+}
+
+message Request {
+  string name = 1;
+}
+
+message Response {
+  string msg = 1;
+}

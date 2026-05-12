@@ -1,0 +1,302 @@
+// Copyright 2020 Asim Aslam
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Original source: github.com/ycxwi/go-micro/v3/auth/options.go
+
+package auth
+
+import (
+	"context"
+	"time"
+
+	"github.com/ycxwi/micro/v3/service/store"
+)
+
+//NewOptions of auth
+func NewOptions(opts ...Option) Options {
+	var options Options
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
+//Options of auth
+type Options struct {
+	// Issuer of the service's account
+	Issuer string
+	// ID is the services auth ID
+	ID string
+	// Secret is used to authenticate the service
+	Secret string
+	// Token is the services token used to authenticate itself
+	Token *AccountToken
+	// PublicKey for decoding JWTs
+	PublicKey string
+	// PrivateKey for encoding JWTs
+	PrivateKey string
+	// LoginURL is the relative url path where a user can login
+	LoginURL string
+	// Store to back auth
+	Store store.Store
+	// Addrs sets the addresses of auth
+	Addrs []string
+	// Context to store other options
+	Context context.Context
+}
+
+type Option func(o *Options)
+
+// Addrs is the auth addresses to use
+func Addrs(addrs ...string) Option {
+	return func(o *Options) {
+		o.Addrs = addrs
+	}
+}
+
+// Issuer of the services account
+func Issuer(i string) Option {
+	return func(o *Options) {
+		o.Issuer = i
+	}
+}
+
+// Store to back auth
+func Store(s store.Store) Option {
+	return func(o *Options) {
+		o.Store = s
+	}
+}
+
+// PublicKey is the JWT public key
+func PublicKey(key string) Option {
+	return func(o *Options) {
+		o.PublicKey = key
+	}
+}
+
+// PrivateKey is the JWT private key
+func PrivateKey(key string) Option {
+	return func(o *Options) {
+		o.PrivateKey = key
+	}
+}
+
+// Credentials sets the auth credentials
+func Credentials(id, secret string) Option {
+	return func(o *Options) {
+		o.ID = id
+		o.Secret = secret
+	}
+}
+
+// ClientToken sets the auth token to use when making requests
+func ClientToken(token *AccountToken) Option {
+	return func(o *Options) {
+		o.Token = token
+	}
+}
+
+// LoginURL sets the auth LoginURL
+func LoginURL(url string) Option {
+	return func(o *Options) {
+		o.LoginURL = url
+	}
+}
+
+//GenerateOptions of token
+type GenerateOptions struct {
+	// Metadata associated with the account
+	Metadata map[string]string
+	// Scopes the account has access too
+	Scopes []string
+	// Provider of the account, e.g. oauth
+	Provider string
+	// Type of the account, e.g. user
+	Type string
+	// Secret used to authenticate the account
+	Secret string
+	// Issuer of the account, e.g. micro
+	Issuer string
+	// Name of the account e.g. an email or username
+	Name string
+}
+
+//GenerateOption for token gen
+type GenerateOption func(o *GenerateOptions)
+
+// WithSecret for the generated account
+func WithSecret(s string) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Secret = s
+	}
+}
+
+// WithType for the generated account
+func WithType(t string) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Type = t
+	}
+}
+
+// WithMetadata for the generated account
+func WithMetadata(md map[string]string) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Metadata = md
+	}
+}
+
+// WithProvider for the generated account
+func WithProvider(p string) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Provider = p
+	}
+}
+
+// WithScopes for the generated account
+func WithScopes(s ...string) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Scopes = s
+	}
+}
+
+// WithIssuer for the generated account
+func WithIssuer(i string) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Issuer = i
+	}
+}
+
+// WithName for the generated account
+func WithName(n string) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.Name = n
+	}
+}
+
+// NewGenerateOptions from a slice of options
+func NewGenerateOptions(opts ...GenerateOption) GenerateOptions {
+	var options GenerateOptions
+	for _, o := range opts {
+		o(&options)
+	}
+	return options
+}
+
+//TokenOptions for Token
+type TokenOptions struct {
+	// ID for the account
+	ID string
+	// Secret for the account
+	Secret string
+	// RefreshToken is used to refresh a token
+	RefreshToken string
+	// Expiry is the time the token should live for
+	Expiry time.Duration
+	// Issuer of the account
+	Issuer string
+}
+
+//TokenOption to set Token
+type TokenOption func(o *TokenOptions)
+
+// WithExpiry for the token
+func WithExpiry(ex time.Duration) TokenOption {
+	return func(o *TokenOptions) {
+		o.Expiry = ex
+	}
+}
+
+//WithCredentials of TokenOption
+func WithCredentials(id, secret string) TokenOption {
+	return func(o *TokenOptions) {
+		o.ID = id
+		o.Secret = secret
+	}
+}
+
+//WithToken to refresh token
+func WithToken(rt string) TokenOption {
+	return func(o *TokenOptions) {
+		o.RefreshToken = rt
+	}
+}
+
+//WithTokenIssuer to set issuer
+func WithTokenIssuer(iss string) TokenOption {
+	return func(o *TokenOptions) {
+		o.Issuer = iss
+	}
+}
+
+// NewTokenOptions from a slice of options
+func NewTokenOptions(opts ...TokenOption) TokenOptions {
+	var options TokenOptions
+	for _, o := range opts {
+		o(&options)
+	}
+
+	// set default expiry of token
+	if options.Expiry == 0 {
+		options.Expiry = time.Minute
+	}
+
+	return options
+}
+
+//VerifyOptions to Verify
+type VerifyOptions struct {
+	Context   context.Context
+	Namespace string
+}
+
+//VerifyOption to Verify
+type VerifyOption func(o *VerifyOptions)
+
+//VerifyContext to Context
+func VerifyContext(ctx context.Context) VerifyOption {
+	return func(o *VerifyOptions) {
+		o.Context = ctx
+	}
+}
+
+//VerifyNamespace to Verify Namespace
+func VerifyNamespace(ns string) VerifyOption {
+	return func(o *VerifyOptions) {
+		o.Namespace = ns
+	}
+}
+
+//RulesOptions of rule
+type RulesOptions struct {
+	Context   context.Context
+	Namespace string
+}
+
+//RulesOption of RulesOption
+type RulesOption func(o *RulesOptions)
+
+//RulesContext of Rules Context
+func RulesContext(ctx context.Context) RulesOption {
+	return func(o *RulesOptions) {
+		o.Context = ctx
+	}
+}
+
+//RulesNamespace of RulesOption
+func RulesNamespace(ns string) RulesOption {
+	return func(o *RulesOptions) {
+		o.Namespace = ns
+	}
+}

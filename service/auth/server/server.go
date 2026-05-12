@@ -1,0 +1,63 @@
+package server
+
+import (
+	pb "github.com/ycxwi/micro/v3/proto/auth"
+	"github.com/ycxwi/micro/v3/service"
+	"github.com/ycxwi/micro/v3/service/auth"
+	"github.com/ycxwi/micro/v3/service/auth/handler"
+	"github.com/ycxwi/micro/v3/service/logger"
+	"github.com/ycxwi/micro/v3/service/store"
+	"github.com/ycxwi/micro/v3/util/auth/token"
+	"github.com/ycxwi/micro/v3/util/auth/token/jwt"
+	"github.com/urfave/cli/v2"
+)
+
+// Flags specific to the router
+var Flags = []cli.Flag{
+	&cli.BoolFlag{
+		Name:    "disable_admin",
+		EnvVars: []string{"MICRO_AUTH_DISABLE_ADMIN"},
+		Usage:   "Prevent generation of default accounts in namespaces",
+	},
+}
+
+const (
+	name    = "auth"
+	address = ":8010"
+)
+
+// Run the auth service
+func Run(ctx *cli.Context) error {
+	srv := service.New(
+		service.Name(name),
+		service.Address(address),
+	)
+
+	// setup the handlers
+	ruleH := &handler.Rules{}
+	authH := &handler.Auth{
+		DisableAdmin: ctx.Bool("disable_admin"),
+	}
+
+	// setup the auth handler to use JWTs
+	authH.TokenProvider = jwt.NewTokenProvider(
+		token.WithPublicKey(auth.DefaultAuth.Options().PublicKey),
+		token.WithPrivateKey(auth.DefaultAuth.Options().PrivateKey),
+	)
+
+	// set the handlers store
+	store.DefaultStore.Init(store.Table("auth"))
+	authH.Init(auth.Store(store.DefaultStore))
+	ruleH.Init(auth.Store(store.DefaultStore))
+
+	// register handlers
+	pb.RegisterAuthHandler(srv.Server(), authH)
+	pb.RegisterRulesHandler(srv.Server(), ruleH)
+	pb.RegisterAccountsHandler(srv.Server(), authH)
+
+	// run service
+	if err := srv.Run(); err != nil {
+		logger.Fatal(err)
+	}
+	return nil
+}
